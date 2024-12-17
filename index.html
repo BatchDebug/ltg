@@ -1,0 +1,288 @@
+<html><head><base href="." />
+<title>Initialisiere LeonTougeGame...</title>
+<style>
+body {
+    background: #000;
+    color: #0f0;
+    font-family: monospace;
+    margin: 0;
+    padding: 20px;
+    overflow: hidden;
+}
+
+#progress-container {
+    width: 80%;
+    height: 30px;
+    border: 2px solid #0f0;
+    margin: 20px auto;
+    position: relative;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #0f0;
+    transition: width 0.5s;
+}
+
+#status {
+    text-align: center;
+    margin: 20px;
+    font-size: 24px;
+}
+
+#loading-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #000;
+    font-weight: bold;
+    z-index: 2;
+}
+
+#terminal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 400px;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid #0f0;
+    padding: 10px;
+    font-size: 12px;
+    overflow-y: scroll;
+}
+
+#video-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: #000;
+}
+
+.error {
+    color: #ff0000;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+</style>
+</head>
+<body>
+<div id="status">Loading index.exe...</div>
+<div id="progress-container">
+    <div id="progress-bar"></div>
+    <div id="loading-text">0%</div>
+</div>
+<div id="terminal"></div>
+
+<div id="video-container">
+    <video id="rickroll" loop>
+        <source src="https://ia800605.us.archive.org/7/items/Rick_Astley_Never_Gonna_Give_You_Up/Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
+    </video>
+</div>
+
+<script>
+const loadingTexts = [
+    "Loading index.exe...",
+];
+
+const terminalMessages = [
+    "> sudo initialize quantum_core --force",
+    "$ ./configure --enable-neural-processing",
+    "> npm install quantum-dependencies",
+    "$ make install-parallel-computing",
+    "> git clone https://quantum.repo/neural-engine.git",
+    "$ python3 neural_training.py --epochs 1000",
+    "> docker run quantum-container",
+    "$ systemctl start quantum-service",
+    "> Installing dependency: neural-net-framework@4.2.1",
+    "$ ./quantum-compiler --optimize",
+    "> mongod --dbpath /var/lib/quantum/data",
+    "$ redis-server /etc/redis/neural.conf",
+    "> pm2 start neural-cluster.config.js",
+    "$ kubectl apply -f quantum-deployment.yaml",
+    "> terraform apply -auto-approve",
+    "$ ansible-playbook deploy-neural.yml",
+    "> jenkins build quantum-pipeline",
+    "$ gradle buildNeural --parallel",
+    "> nginx -t && systemctl reload nginx",
+    "$ rabbitmqctl start_app",
+    "> supervisord -c /etc/supervisor/neural.conf",
+    "$ elasticsearch -d --pidfile",
+    "> logstash -f quantum-pipeline.conf",
+    "$ kibana --allow-root",
+    "> prometheus --config.file=quantum.yml",
+    "$ grafana-server --config=/etc/grafana/config.ini",
+    "> docker-compose up -d neural-stack",
+    "$ kubectl rollout status deployment/quantum",
+    "> istioctl install --set profile=demo",
+    "$ helm install neural-release ./neural-chart",
+    "> vagrant up quantum-box",
+    "$ chef-client --once --systemd",
+    "> salt '*' state.apply quantum",
+    "$ puppet agent --test",
+    "> terraform init -backend=true",
+    "$ aws eks update-kubeconfig",
+    "> gcloud container clusters get-credentials",
+    "$ az aks get-credentials",
+    "> heroku container:push neural",
+    "$ vercel deploy --prod",
+    "> netlify deploy --prod",
+    "$ firebase deploy --only functions",
+    "> serverless deploy",
+    "$ cargo test --release",
+    "> rustc --edition=2021 quantum.rs",
+    "$ go test ./... -v",
+    "> mvn clean install -DskipTests",
+    "$ sbt compile",
+    "$ bundler install --deployment",
+    "> composer install --optimize-autoloader",
+    "$ pip install -r requirements.txt",
+    "> conda create -n quantum python=3.9",
+    "$ virtualenv quantum-env",
+    "> yarn install --frozen-lockfile",
+    "$ npm ci --production",
+    "> docker build -t quantum-app .",
+    "$ scala build.sbt",
+    "> crystal build src/quantum.cr",
+    "$ mix deps.get",
+    "> cabal new-build all",
+    "$ stack build --fast",
+    "> deno run --allow-net quantum.ts",
+    "$ bun install",
+    "> pnpm install --shamefully-hoist",
+    "$ bazel build //quantum/...",
+    "> cmake --build . --config Release",
+    "$ make -j$(nproc)",
+    "> gcc -O3 -march=native quantum.c",
+    "$ clang++ -std=c++20 quantum.cpp",
+    "> rustup update stable",
+    "$ go mod tidy",
+    "> dotnet restore",
+    "$ nuget restore quantum.sln"
+];
+
+let startTime = Date.now();
+let progress = 0;
+let currentTextIndex = 0;
+let isPaused = false;
+let updateTimeout;
+const totalTime = 18 * 60 * 1000;
+let secretCode = '';
+
+document.addEventListener('keypress', (e) => {
+    secretCode += e.key;
+    if (secretCode.length > 8) {
+        secretCode = secretCode.slice(-8);
+    }
+    if (secretCode === 'FFF98FFF') {
+        progress = 97;
+        document.getElementById('progress-bar').style.width = progress + '%';
+        document.getElementById('loading-text').textContent = Math.floor(progress) + '%';
+    }
+});
+
+function addTerminalMessage() {
+    const terminal = document.getElementById('terminal');
+    const message = terminalMessages[Math.floor(Math.random() * terminalMessages.length)];
+    const timestamp = new Date().toLocaleTimeString();
+    terminal.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+    terminal.scrollTop = terminal.scrollHeight;
+    
+    const lines = terminal.innerHTML.split('<div');
+    if (lines.length > 100) {
+        terminal.innerHTML = lines.slice(-100).join('<div');
+    }
+}
+
+function updateProgress() {
+    if (isPaused) return;
+    
+    const elapsedTime = Date.now() - startTime;
+    const timeLeft = totalTime - elapsedTime;
+    
+    if (timeLeft <= 0 || progress >= 99.9) {
+        document.getElementById('progress-container').style.display = 'none';
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('terminal').style.display = 'none';
+        document.getElementById('video-container').style.display = 'block';
+        
+        const video = document.getElementById('rickroll');
+        video.play();
+        video.controls = false;
+        video.addEventListener('pause', () => video.play());
+        return;
+    }
+
+    progress = 100 - (timeLeft / totalTime * 100);
+    progress = Math.min(progress, 99.9);
+
+    document.getElementById('progress-bar').style.width = progress + '%';
+    document.getElementById('loading-text').textContent = Math.floor(progress) + '%';
+
+    if (progress > (currentTextIndex + 1) * (100 / loadingTexts.length)) {
+        currentTextIndex = Math.min(currentTextIndex + 1, loadingTexts.length - 1);
+    }
+    document.getElementById('status').textContent = loadingTexts[currentTextIndex];
+
+    if (Math.random() < 0.1) {
+        addTerminalMessage();
+    }
+
+    const baseDelay = 50;
+    const maxDelay = 500;
+    const delayIncrease = (elapsedTime / totalTime) * (maxDelay - baseDelay);
+    const currentDelay = baseDelay + delayIncrease;
+
+    updateTimeout = setTimeout(updateProgress, currentDelay);
+}
+
+// Handle mouse leave
+document.body.addEventListener('mouseleave', () => {
+    isPaused = true;
+    clearTimeout(updateTimeout);
+    const terminal = document.getElementById('terminal');
+    terminal.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] CRITICAL: Process suspended due to mouse focus loss. Please keep mouse within the application window.</div>`;
+});
+
+// Handle mouse enter
+document.body.addEventListener('mouseenter', () => {
+    isPaused = false;
+    updateProgress();
+});
+
+// Handle visibility change
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        isPaused = true;
+        clearTimeout(updateTimeout);
+        const terminal = document.getElementById('terminal');
+        terminal.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] CRITICAL: Process suspended due to window focus loss. Please maintain focus on the application.</div>`;
+    } else {
+        isPaused = false;
+        updateProgress();
+    }
+});
+
+// Start the progress
+updateProgress();
+
+// Prevent context menu and certain key presses
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+    }
+});
+</script>
+</body></html>
