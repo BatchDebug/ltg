@@ -1,287 +1,430 @@
-<html><head><base href="." />
-<title>Initialisiere LeonTougeGame...</title>
+<html><head><base href="https://roguealpha.dungeonblend.com/"><title>Rogue Alpha - Dungeon Crawler</title>
 <style>
 body {
-    background: #000;
-    color: #0f0;
-    font-family: monospace;
+    background: #1a1a1a;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
     margin: 0;
-    padding: 20px;
     overflow: hidden;
 }
-
-#progress-container {
-    width: 80%;
-    height: 30px;
-    border: 2px solid #0f0;
-    margin: 20px auto;
+#game-container {
     position: relative;
+    width: 80vw;
+    height: 80vh;
+    overflow: hidden;
+    border: 2px solid #444;
+    background-color: #000;
 }
-
-#progress-bar {
-    width: 0%;
-    height: 100%;
-    background: #0f0;
-    transition: width 0.5s;
-}
-
-#status {
-    text-align: center;
-    margin: 20px;
-    font-size: 24px;
-}
-
-#loading-text {
+#dungeon {
     position: absolute;
-    width: 100%;
-    text-align: center;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #000;
-    font-weight: bold;
-    z-index: 2;
+    display: grid;
+    gap: 1px;
+    transition: all 0.3s ease;
 }
-
-#terminal {
-    position: fixed;
+.tile {
+    width: 40px;
+    height: 40px;
+    background-color: #333;
+    border: 1px solid #444;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.wall { background-color: #555; }
+.player { background-color: #3498db; border-radius: 50%; }
+.exit { background-color: #27ae60; }
+.enemy { background-color: #e74c3c; }
+#controls {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 5px;
+}
+.control-btn {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(68, 68, 68, 0.7);
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.control-btn:hover, .control-btn:active {
+    background-color: rgba(100, 100, 100, 0.7);
+}
+#popup {
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 800px;
-    height: 400px;
-    background: rgba(0,0,0,0.8);
-    border: 1px solid #0f0;
-    padding: 10px;
-    font-size: 12px;
-    overflow-y: scroll;
-}
-
-#video-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
     display: none;
-    background: #000;
+    max-width: 80%;
+    max-height: 80%;
+    overflow-y: auto;
 }
-
-.error {
-    color: #ff0000;
+#popup-text {
+    margin-bottom: 15px;
 }
-
-video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+#popup-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+#debug-info {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px;
+    font-size: 12px;
+}
+#stats {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px;
+    font-size: 14px;
+    text-align: right;
+}
+#info-panel {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    font-size: 14px;
+    max-width: 30%;
+    max-height: 30%;
+    overflow-y: auto;
 }
 </style>
 </head>
 <body>
-<div id="status">Loading index.exe...</div>
-<div id="progress-container">
-    <div id="progress-bar"></div>
-    <div id="loading-text">0%</div>
+<div id="game-container">
+    <div id="dungeon"></div>
+    <div id="controls">
+        <button class="control-btn"></button>
+        <button class="control-btn" id="up-btn">↑</button>
+        <button class="control-btn"></button>
+        <button class="control-btn" id="left-btn">←</button>
+        <button class="control-btn"></button>
+        <button class="control-btn" id="right-btn">→</button>
+        <button class="control-btn"></button>
+        <button class="control-btn" id="down-btn">↓</button>
+        <button class="control-btn"></button>
+    </div>
+    <div id="debug-info"></div>
+    <div id="stats"></div>
+    <div id="info-panel">Spielinformationen und Nachrichten erscheinen hier.</div>
 </div>
-<div id="terminal"></div>
+<div id="popup">
+    <p id="popup-text"></p>
+    <button id="popup-button">OK</button>
+</div>
 
-<div id="video-container">
-    <video id="rickroll" loop>
-        <source src="https://ia800605.us.archive.org/7/items/Rick_Astley_Never_Gonna_Give_You_Up/Rick_Astley_Never_Gonna_Give_You_Up.mp4" type="video/mp4">
-    </video>
+<div id="dev-log">
 </div>
 
 <script>
-const loadingTexts = [
-    "Loading index.exe...",
-];
+const dungeon = document.getElementById('dungeon');
+const gameContainer = document.getElementById('game-container');
+const popup = document.getElementById('popup');
+const popupText = document.getElementById('popup-text');
+const popupButton = document.getElementById('popup-button');
+const debugInfo = document.getElementById('debug-info');
+const statsDisplay = document.getElementById('stats');
+const infoPanel = document.getElementById('info-panel');
+const width = 30;
+const height = 20;
+const tileSize = 40;
+let playerPosition = { x: 1, y: 1 };
+let dungeonLayout = [];
+let enemies = [];
+let level = 1;
+let playerStats = {
+    hp: 100,
+    maxHp: 100,
+    attack: 10,
+    defense: 5,
+    exp: 0,
+    gold: 0
+};
 
-const terminalMessages = [
-    "> sudo initialize quantum_core --force",
-    "$ ./configure --enable-neural-processing",
-    "> npm install quantum-dependencies",
-    "$ make install-parallel-computing",
-    "> git clone https://quantum.repo/neural-engine.git",
-    "$ python3 neural_training.py --epochs 1000",
-    "> docker run quantum-container",
-    "$ systemctl start quantum-service",
-    "> Installing dependency: neural-net-framework@4.2.1",
-    "$ ./quantum-compiler --optimize",
-    "> mongod --dbpath /var/lib/quantum/data",
-    "$ redis-server /etc/redis/neural.conf",
-    "> pm2 start neural-cluster.config.js",
-    "$ kubectl apply -f quantum-deployment.yaml",
-    "> terraform apply -auto-approve",
-    "$ ansible-playbook deploy-neural.yml",
-    "> jenkins build quantum-pipeline",
-    "$ gradle buildNeural --parallel",
-    "> nginx -t && systemctl reload nginx",
-    "$ rabbitmqctl start_app",
-    "> supervisord -c /etc/supervisor/neural.conf",
-    "$ elasticsearch -d --pidfile",
-    "> logstash -f quantum-pipeline.conf",
-    "$ kibana --allow-root",
-    "> prometheus --config.file=quantum.yml",
-    "$ grafana-server --config=/etc/grafana/config.ini",
-    "> docker-compose up -d neural-stack",
-    "$ kubectl rollout status deployment/quantum",
-    "> istioctl install --set profile=demo",
-    "$ helm install neural-release ./neural-chart",
-    "> vagrant up quantum-box",
-    "$ chef-client --once --systemd",
-    "> salt '*' state.apply quantum",
-    "$ puppet agent --test",
-    "> terraform init -backend=true",
-    "$ aws eks update-kubeconfig",
-    "> gcloud container clusters get-credentials",
-    "$ az aks get-credentials",
-    "> heroku container:push neural",
-    "$ vercel deploy --prod",
-    "> netlify deploy --prod",
-    "$ firebase deploy --only functions",
-    "> serverless deploy",
-    "$ cargo test --release",
-    "> rustc --edition=2021 quantum.rs",
-    "$ go test ./... -v",
-    "> mvn clean install -DskipTests",
-    "$ sbt compile",
-    "$ bundler install --deployment",
-    "> composer install --optimize-autoloader",
-    "$ pip install -r requirements.txt",
-    "> conda create -n quantum python=3.9",
-    "$ virtualenv quantum-env",
-    "> yarn install --frozen-lockfile",
-    "$ npm ci --production",
-    "> docker build -t quantum-app .",
-    "$ scala build.sbt",
-    "> crystal build src/quantum.cr",
-    "$ mix deps.get",
-    "> cabal new-build all",
-    "$ stack build --fast",
-    "> deno run --allow-net quantum.ts",
-    "$ bun install",
-    "> pnpm install --shamefully-hoist",
-    "$ bazel build //quantum/...",
-    "> cmake --build . --config Release",
-    "$ make -j$(nproc)",
-    "> gcc -O3 -march=native quantum.c",
-    "$ clang++ -std=c++20 quantum.cpp",
-    "> rustup update stable",
-    "$ go mod tidy",
-    "> dotnet restore",
-    "$ nuget restore quantum.sln"
-];
+const TILE_TYPES = {
+    FLOOR: '.',
+    WALL: '#',
+    PLAYER: '@',
+    EXIT: '>',
+    ENEMY: 'E',
+    ITEM: 'i',
+    GOLD: '$'
+};
 
-let startTime = Date.now();
-let progress = 0;
-let currentTextIndex = 0;
-let isPaused = false;
-let updateTimeout;
-const totalTime = 18 * 60 * 1000;
-let secretCode = '';
-
-document.addEventListener('keypress', (e) => {
-    secretCode += e.key;
-    if (secretCode.length > 8) {
-        secretCode = secretCode.slice(-8);
-    }
-    if (secretCode === 'FFF98FFF') {
-        progress = 97;
-        document.getElementById('progress-bar').style.width = progress + '%';
-        document.getElementById('loading-text').textContent = Math.floor(progress) + '%';
-    }
-});
-
-function addTerminalMessage() {
-    const terminal = document.getElementById('terminal');
-    const message = terminalMessages[Math.floor(Math.random() * terminalMessages.length)];
-    const timestamp = new Date().toLocaleTimeString();
-    terminal.innerHTML += `<div>[${timestamp}] ${message}</div>`;
-    terminal.scrollTop = terminal.scrollHeight;
+function createDungeon() {
+    dungeon.innerHTML = '';
+    dungeon.style.gridTemplateColumns = `repeat(${width}, ${tileSize}px)`;
+    dungeon.style.gridTemplateRows = `repeat(${height}, ${tileSize}px)`;
     
-    const lines = terminal.innerHTML.split('<div');
-    if (lines.length > 100) {
-        terminal.innerHTML = lines.slice(-100).join('<div');
+    dungeonLayout = [];
+    enemies = [];
+    
+    for (let y = 0; y < height; y++) {
+        dungeonLayout[y] = [];
+        for (let x = 0; x < width; x++) {
+            const tile = document.createElement('div');
+            tile.classList.add('tile');
+            
+            if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
+                tile.classList.add('wall');
+                dungeonLayout[y][x] = TILE_TYPES.WALL;
+            } else {
+                dungeonLayout[y][x] = Math.random() < 0.8 ? TILE_TYPES.FLOOR : TILE_TYPES.WALL;
+                if (dungeonLayout[y][x] === TILE_TYPES.WALL) {
+                    tile.classList.add('wall');
+                }
+            }
+            
+            if (x === playerPosition.x && y === playerPosition.y) {
+                tile.classList.add('player');
+                dungeonLayout[y][x] = TILE_TYPES.PLAYER;
+            }
+            
+            if (x === width - 2 && y === height - 2) {
+                tile.classList.add('exit');
+                dungeonLayout[y][x] = TILE_TYPES.EXIT;
+            }
+            
+            tile.textContent = dungeonLayout[y][x];
+            dungeon.appendChild(tile);
+        }
+    }
+    
+    // Add enemies
+    for (let i = 0; i < 5; i++) {
+        let x, y;
+        do {
+            x = Math.floor(Math.random() * (width - 2)) + 1;
+            y = Math.floor(Math.random() * (height - 2)) + 1;
+        } while (dungeonLayout[y][x] !== TILE_TYPES.FLOOR);
+        dungeonLayout[y][x] = TILE_TYPES.ENEMY;
+        enemies.push({ x, y, hp: 20, attack: 5 });
+        dungeon.children[y * width + x].classList.add('enemy');
+        dungeon.children[y * width + x].textContent = TILE_TYPES.ENEMY;
+    }
+    
+    centerCamera();
+    updateDebugInfo();
+    updateStats();
+    updateInfoPanel("Willkommen in Level " + level + "! Erkunde den Dungeon und finde den Ausgang.");
+}
+
+function centerCamera() {
+    const containerWidth = gameContainer.offsetWidth;
+    const containerHeight = gameContainer.offsetHeight;
+    const dungeonWidth = width * tileSize;
+    const dungeonHeight = height * tileSize;
+    
+    const leftOffset = (playerPosition.x * tileSize) - (containerWidth / 2) + (tileSize / 2);
+    const topOffset = (playerPosition.y * tileSize) - (containerHeight / 2) + (tileSize / 2);
+    
+    dungeon.style.left = `${Math.max(Math.min(0, -leftOffset), containerWidth - dungeonWidth)}px`;
+    dungeon.style.top = `${Math.max(Math.min(0, -topOffset), containerHeight - dungeonHeight)}px`;
+}
+
+function movePlayer(dx, dy) {
+    const newX = playerPosition.x + dx;
+    const newY = playerPosition.y + dy;
+    
+    if (newX > 0 && newX < width - 1 && newY > 0 && newY < height - 1) {
+        const targetTile = dungeonLayout[newY][newX];
+        if (targetTile === TILE_TYPES.FLOOR || targetTile === TILE_TYPES.EXIT) {
+            dungeonLayout[playerPosition.y][playerPosition.x] = TILE_TYPES.FLOOR;
+            playerPosition.x = newX;
+            playerPosition.y = newY;
+            dungeonLayout[newY][newX] = TILE_TYPES.PLAYER;
+            updatePlayerPosition();
+            checkWinCondition();
+        } else if (targetTile === TILE_TYPES.ENEMY) {
+            attackEnemy(newX, newY);
+        }
+    }
+    updateDebugInfo();
+    updateStats();
+    moveEnemies();
+}
+
+function updatePlayerPosition() {
+    const playerTile = dungeon.children[playerPosition.y * width + playerPosition.x];
+    const oldPlayerTile = dungeon.querySelector('.player');
+    if (oldPlayerTile) {
+        oldPlayerTile.classList.remove('player');
+        oldPlayerTile.textContent = TILE_TYPES.FLOOR;
+    }
+    playerTile.classList.add('player');
+    playerTile.textContent = TILE_TYPES.PLAYER;
+    centerCamera();
+}
+
+function attackEnemy(x, y) {
+    const enemyIndex = enemies.findIndex(e => e.x === x && e.y === y);
+    if (enemyIndex !== -1) {
+        const enemy = enemies[enemyIndex];
+        enemy.hp -= playerStats.attack;
+        if (enemy.hp <= 0) {
+            // Enemy defeated
+            dungeonLayout[y][x] = TILE_TYPES.FLOOR;
+            dungeon.children[y * width + x].classList.remove('enemy');
+            dungeon.children[y * width + x].textContent = TILE_TYPES.FLOOR;
+            enemies.splice(enemyIndex, 1);
+            playerStats.exp += 10;
+            playerStats.gold += Math.floor(Math.random() * 10) + 1;
+            updateInfoPanel("Du hast einen Gegner besiegt! 10 EP und etwas Gold erhalten.");
+        } else {
+            // Player takes damage
+            playerStats.hp -= enemy.attack;
+            updateInfoPanel("Du hast einen Gegner angegriffen! Er hat noch " + enemy.hp + " LP. Du erleidest " + enemy.attack + " Schaden.");
+            if (playerStats.hp <= 0) {
+                showPopup('Spiel vorbei! Du wurdest besiegt.');
+            }
+        }
     }
 }
 
-function updateProgress() {
-    if (isPaused) return;
-    
-    const elapsedTime = Date.now() - startTime;
-    const timeLeft = totalTime - elapsedTime;
-    
-    if (timeLeft <= 0 || progress >= 99.9) {
-        document.getElementById('progress-container').style.display = 'none';
-        document.getElementById('status').style.display = 'none';
-        document.getElementById('terminal').style.display = 'none';
-        document.getElementById('video-container').style.display = 'block';
+function moveEnemies() {
+    enemies.forEach(enemy => {
+        const dx = Math.sign(playerPosition.x - enemy.x);
+        const dy = Math.sign(playerPosition.y - enemy.y);
+        const newX = enemy.x + dx;
+        const newY = enemy.y + dy;
         
-        const video = document.getElementById('rickroll');
-        video.play();
-        video.controls = false;
-        video.addEventListener('pause', () => video.play());
-        return;
-    }
-
-    progress = 100 - (timeLeft / totalTime * 100);
-    progress = Math.min(progress, 99.9);
-
-    document.getElementById('progress-bar').style.width = progress + '%';
-    document.getElementById('loading-text').textContent = Math.floor(progress) + '%';
-
-    if (progress > (currentTextIndex + 1) * (100 / loadingTexts.length)) {
-        currentTextIndex = Math.min(currentTextIndex + 1, loadingTexts.length - 1);
-    }
-    document.getElementById('status').textContent = loadingTexts[currentTextIndex];
-
-    if (Math.random() < 0.1) {
-        addTerminalMessage();
-    }
-
-    const baseDelay = 50;
-    const maxDelay = 500;
-    const delayIncrease = (elapsedTime / totalTime) * (maxDelay - baseDelay);
-    const currentDelay = baseDelay + delayIncrease;
-
-    updateTimeout = setTimeout(updateProgress, currentDelay);
+        if (dungeonLayout[newY][newX] === TILE_TYPES.FLOOR) {
+            dungeonLayout[enemy.y][enemy.x] = TILE_TYPES.FLOOR;
+            dungeon.children[enemy.y * width + enemy.x].classList.remove('enemy');
+            dungeon.children[enemy.y * width + enemy.x].textContent = TILE_TYPES.FLOOR;
+            
+            enemy.x = newX;
+            enemy.y = newY;
+            dungeonLayout[newY][newX] = TILE_TYPES.ENEMY;
+            dungeon.children[newY * width + newX].classList.add('enemy');
+            dungeon.children[newY * width + newX].textContent = TILE_TYPES.ENEMY;
+        } else if (newX === playerPosition.x && newY === playerPosition.y) {
+            // Enemy attacks player
+            playerStats.hp -= enemy.attack;
+            updateInfoPanel("Ein Gegner hat dich angegriffen! Du erleidest " + enemy.attack + " Schaden.");
+            if (playerStats.hp <= 0) {
+                showPopup('Spiel vorbei! Du wurdest besiegt.');
+            }
+        }
+    });
 }
 
-// Handle mouse leave
-document.body.addEventListener('mouseleave', () => {
-    isPaused = true;
-    clearTimeout(updateTimeout);
-    const terminal = document.getElementById('terminal');
-    terminal.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] CRITICAL: Process suspended due to mouse focus loss. Please keep mouse within the application window.</div>`;
+function checkWinCondition() {
+    if (playerPosition.x === width - 2 && playerPosition.y === height - 2) {
+        level++;
+        showPopup(`Glückwunsch! Du hast den Ausgang erreicht! Weiter zu Level ${level}.`);
+    }
+}
+
+function resetGame() {
+    playerPosition = { x: 1, y: 1 };
+    playerStats.hp = playerStats.maxHp;
+    createDungeon();
+}
+
+function showPopup(message) {
+    popupText.textContent = message;
+    popup.style.display = 'block';
+}
+
+function updateDebugInfo() {
+    debugInfo.textContent = `Player: (${playerPosition.x}, ${playerPosition.y}) | Tile: ${dungeonLayout[playerPosition.y][playerPosition.x]}`;
+}
+
+function updateStats() {
+    statsDisplay.textContent = `LP: ${playerStats.hp}/${playerStats.maxHp} | ANG: ${playerStats.attack} | VER: ${playerStats.defense} | EP: ${playerStats.exp} | Gold: ${playerStats.gold} | Level: ${level}`;
+}
+
+function updateInfoPanel(message) {
+    infoPanel.textContent = message;
+}
+
+popupButton.addEventListener('click', () => {
+    popup.style.display = 'none';
+    resetGame();
 });
 
-// Handle mouse enter
-document.body.addEventListener('mouseenter', () => {
-    isPaused = false;
-    updateProgress();
-});
+createDungeon();
 
-// Handle visibility change
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        isPaused = true;
-        clearTimeout(updateTimeout);
-        const terminal = document.getElementById('terminal');
-        terminal.innerHTML += `<div class="error">[${new Date().toLocaleTimeString()}] CRITICAL: Process suspended due to window focus loss. Please maintain focus on the application.</div>`;
-    } else {
-        isPaused = false;
-        updateProgress();
+// Keyboard controls
+document.addEventListener('keydown', (event) => {
+    switch(event.key) {
+        case 'w':
+        case 'ArrowUp':
+            movePlayer(0, -1);
+            break;
+        case 'a':
+        case 'ArrowLeft':
+            movePlayer(-1, 0);
+            break;
+        case 's':
+        case 'ArrowDown':
+            movePlayer(0, 1);
+            break;
+        case 'd':
+        case 'ArrowRight':
+            movePlayer(1, 0);
+            break;
     }
 });
 
-// Start the progress
-updateProgress();
+// Touch controls
+document.getElementById('up-btn').addEventListener('click', () => movePlayer(0, -1));
+document.getElementById('left-btn').addEventListener('click', () => movePlayer(-1, 0));
+document.getElementById('right-btn').addEventListener('click', () => movePlayer(1, 0));
+document.getElementById('down-btn').addEventListener('click', () => movePlayer(0, 1));
 
-// Prevent context menu and certain key presses
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('keydown', e => {
-    if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
-        e.preventDefault();
+// Swipe controls
+let touchStartX, touchStartY;
+
+gameContainer.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+});
+
+gameContainer.addEventListener('touchend', (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    
+    if (Math.abs(deltaX) > 20 || Math.abs(deltaY) > 20) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Horizontal swipe
+            movePlayer(deltaX > 0 ? 1 : -1, 0);
+        } else {
+            // Vertical swipe
+            movePlayer(0, deltaY > 0 ? 1 : -1);
+        }
     }
 });
 </script>
